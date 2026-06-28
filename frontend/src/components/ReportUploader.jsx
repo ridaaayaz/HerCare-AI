@@ -7,12 +7,12 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
   const [langPreference, setLangPreference] = useState('both');
   const [uploading, setUploading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
-  
+
   // Chat state
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
-  
+
   const fileInputRef = useRef(null);
 
   const handleDragOver = (e) => {
@@ -39,21 +39,21 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('lang', langPreference);
-      
+
       const headers = {};
       if (geminiKey) {
         headers['Authorization'] = `Bearer ${geminiKey}`;
       }
-      
+
       const res = await fetch(`${backendUrl}/api/explain-report`, {
         method: 'POST',
         headers: headers,
         body: formData
       });
-      
+
       const data = await res.json();
       setAnalysis(data);
-      
+
       // Initialize chat messages with a welcoming message
       setChatMessages([
         {
@@ -61,7 +61,7 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
           text: "Assalam-o-Alaikum! Maine aapki report analyze kar li hai. Kya aap is report ke baare mein koi mazeed sawaal poochna chahti hain? (Do you have any follow-up questions?)"
         }
       ]);
-      
+
     } catch (err) {
       console.error("Error analyzing medical report:", err);
       alert("Error analyzing report. Please ensure backend is running.");
@@ -73,62 +73,55 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
   const handleSendChat = async (e) => {
     e.preventDefault();
     if (!chatInput.trim() || sendingMessage) return;
-    
+
     const userMsg = chatInput.trim();
     setChatMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
     setChatInput('');
     setSendingMessage(true);
-    
+
     try {
       // Connect to Gemini API locally via generativeai or simple backend proxy if available
       // For simplicity and robustness, we can call our backend or evaluate directly in the frontend
       // if geminiKey is available, or call backend to generate.
       // Let's create an endpoint /api/chat or perform simple post back to backend.
       // Let's call a quick endpoint or mock if no key.
-      
+
       const payload = {
         message: userMsg,
         history: chatMessages.map(m => ({ role: m.sender === 'user' ? 'user' : 'model', parts: [m.text] })),
         report_context: analysis.explanation
       };
-      
+
       // We can query Gemini in the frontend directly if key is available, or write a quick chat API in the backend.
       // Let's mock a high-quality reply if no key, or fetch from backend!
       // To keep it 100% functional, let's post it to a simple backend chat proxy or call Gemini from frontend if key is available.
       let replyText = "";
-      
-      if (geminiKey) {
-        try {
-          // Import dynamic module is complex, so let's post to the backend helper or use fetch
-          // Let's use a fetch to Gemini direct API
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                { role: "user", parts: [{ text: `You are a medical assistant. Context: ${analysis.explanation}. History: ${JSON.stringify(payload.history)}. Question: ${userMsg}. Answer the user's question clearly, in simple English and Roman Urdu. Keep it comforting.` }] }
-              ]
-            })
-          });
-          const geminiData = await response.json();
-          replyText = geminiData.candidates[0].content.parts[0].text;
-        } catch (err) {
-          console.error("Direct Gemini query failed, falling back to rule replies:", err);
-          replyText = "Main aapki madad karna chahti hoon, lekin server connection temporarily busy hai. Koshish karein ke dosage aur timings ke liye doctor ki advice follow karein.";
-        }
-      } else {
-        // High quality simulated chat replies
-        if (userMsg.toLowerCase().includes("normal") || userMsg.toLowerCase().includes("tsh")) {
-          replyText = "High TSH (6.2) ka matlab hai ke thyroid gland normal se kam kaam kar raha hai. Yeh reversible hai. Doctor thyroid levels normal karne ke liye regular medicine (Thyroxin) prescribe karte hain.";
-        } else if (userMsg.toLowerCase().includes("diet") || userMsg.toLowerCase().includes("khana")) {
-          replyText = "Anemia / Hb level behtar karne ke liye iron-rich food khayein jaise palak (spinach), sev (apple), daalein aur gosht. Chai ya coffee meal ke foran baad na peeyein kyunke yeh iron absorption rokti hain.";
-        } else {
-          replyText = "Ji, bilkul. Doctor ki batayi hui precautions aur medicines follow karna sab se zaroori hai. Koi bhi dawai khali pait ya nashte ke baad, jaise prescribe ki gayi ho, waise hi lein. Mazeed behtari ke liye doctor se lazmi checkup karwayein.";
-        }
+
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (geminiKey) headers['Authorization'] = `Bearer ${geminiKey}`;
+
+        const response = await fetch(`${backendUrl}/api/chat`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            messages: [...chatMessages, { sender: 'user', text: userMsg }].map(m => ({
+              role: m.sender === 'user' ? 'user' : 'model',
+              content: m.text,
+            })),
+            report_context: analysis.explanation,
+          }),
+        });
+
+        const data = await response.json();
+        replyText = data.reply || "Maafi chahti hoon, abhi response nahi aa saka. Thodi der baad dobara koshish karein.";
+      } catch (err) {
+        console.error("Backend chat request failed:", err);
+        replyText = "Backend se connection nahi ho pa raha. Please ensure the server is running.";
       }
-      
+
       setChatMessages(prev => [...prev, { sender: 'bot', text: replyText }]);
-      
+
     } catch (err) {
       console.error("Chat error:", err);
     } finally {
@@ -148,23 +141,23 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
             Ovarian cyst scans, blood test reports (CBC, Thyroid panel, FSH, LH), or doctor's prescriptions ko upload karein. Hamara AI isko aasan zubaan (Urdu/English) mein explain karega.
           </p>
 
-          <div 
+          <div
             className="upload-dropzone"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current.click()}
           >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              style={{ display: 'none' }} 
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
               onChange={handleFileSelect}
               accept="image/*,.pdf"
             />
             <div className="upload-icon">
               <UploadCloud size={32} />
             </div>
-            
+
             {file ? (
               <div>
                 <span style={{ fontWeight: '600', color: 'var(--primary)', display: 'block' }}>
@@ -190,13 +183,13 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Explanation Language:</span>
               <div className="lang-switch">
-                <button 
+                <button
                   className={`lang-btn ${langPreference === 'both' ? 'active' : ''}`}
                   onClick={() => setLangPreference('both')}
                 >
                   Urdu + English
                 </button>
-                <button 
+                <button
                   className={`lang-btn ${langPreference === 'en' ? 'active' : ''}`}
                   onClick={() => setLangPreference('en')}
                 >
@@ -205,7 +198,7 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
               </div>
             </div>
 
-            <button 
+            <button
               className="btn btn-primary"
               onClick={handleUploadSubmit}
               disabled={!file || uploading}
@@ -226,7 +219,7 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Analyzed via {analysis.provider}</span>
                 </div>
               </div>
-              
+
               <button className="btn btn-secondary" onClick={() => setAnalysis(null)}>
                 Upload Another Report
               </button>
@@ -284,9 +277,9 @@ export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
               </div>
 
               <form onSubmit={handleSendChat} className="chat-input-bar">
-                <input 
-                  type="text" 
-                  className="form-control" 
+                <input
+                  type="text"
+                  className="form-control"
                   placeholder="Type your question in English or Roman Urdu..."
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}

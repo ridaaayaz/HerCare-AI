@@ -62,15 +62,13 @@ def index():
             </style>
         </head>
         <body>
-            <h1>💖 HerCare AI Backend API Service</h1>
+            <h1>HerCare AI Backend API Service</h1>
             <p>The Python backend service is active and running successfully!</p>
             <div class="status">
-                <p>🟢 <strong>Status:</strong> Healthy</p>
-                <p>🤖 <strong>ML PCOS Model:</strong> Loaded (Random Forest Classifier)</p>
-                <p>📋 <strong>Conditions Database:</strong> 7 conditions configured</p>
+                <p><strong>Status:</strong> Healthy</p>
+                <p><strong>ML PCOS Model:</strong> Loaded (Random Forest Classifier)</p>
+                <p><strong>Conditions Database:</strong> 7 conditions configured</p>
             </div>
-            <p style="font-size: 0.9rem; color: #71717a;">Please open the frontend client dashboard in your browser to view the portal.</p>
-            <p style="font-size: 0.85rem;"><a href="http://localhost:5173" style="color: #8b5cf6; text-decoration: none; font-weight: bold;">Open Dashboard (http://localhost:5173) &rarr;</a></p>
         </body>
     </html>
     """
@@ -285,8 +283,8 @@ def explain_report():
                     "Be extremely structured. Keep explanations simple, avoid complex medical jargon where possible."
                 )
                 
-                # Using gemini-1.5-flash for multimodal analysis
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Using gemini-2.5-flash for multimodal analysis
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 
                 # Prepare visual parts
                 # If file exists, send bytes. Otherwise, send mock image
@@ -312,7 +310,7 @@ def explain_report():
                 return jsonify({
                     "raw_text": "[Extracted from Gemini API]",
                     "explanation": explanation_text,
-                    "provider": "Gemini-1.5-Flash"
+                    "provider": "Gemini-2.5-Flash"
                 })
                 
             except Exception as gemini_err:
@@ -434,7 +432,7 @@ def discharge_summary():
                     "Only output valid JSON. Do not include markdown code block characters. If you cannot parse, guess typical values for gynecological recovery."
                 )
                 
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 if file_bytes:
                     mime_type = "image/jpeg"
                     if file_name_lower.endswith('.pdf'):
@@ -578,6 +576,7 @@ def chat():
     try:
         data = request.get_json()
         messages = data.get('messages', [])
+        report_context = data.get('report_context', '')
 
         # Get API key from header or environment
         auth_header = request.headers.get('Authorization', '')
@@ -606,6 +605,11 @@ def chat():
                     "Encourage consulting a qualified doctor for medical advice. "
                     "Be warm, supportive, and culturally sensitive."
                 )
+                if report_context:
+                    system_prompt += (
+                " The user previously uploaded a medical report. Here is the explanation you "
+                f"gave them, use it as context for follow-up questions:\n\n{report_context}"
+            )
 
                 # Build history for Gemini
                 history = []
@@ -614,7 +618,7 @@ def chat():
                     history.append({'role': role, 'parts': [msg.get('content', '')]})
 
                 model = genai.GenerativeModel(
-                    'gemini-1.5-flash',
+                    'gemini-2.5-flash',
                     system_instruction=system_prompt
                 )
                 chat_session = model.start_chat(history=history)
