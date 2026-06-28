@@ -127,6 +127,7 @@ export default function HealthScoreWidget({ setActiveView, lang = 'en' }) {
       display: 'flex', flexDirection: 'column',
       minHeight: '240px',
       borderTop: `3px solid ${color}`,
+      overflow: 'hidden',
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -153,10 +154,10 @@ export default function HealthScoreWidget({ setActiveView, lang = 'en' }) {
       {score !== null ? (
         <>
           {/* Score ring + label */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1 }}>
-            <ScoreRing score={score} color={color} size={110} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+            <ScoreRing score={score} color={color} size={100} />
 
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
                 display: 'inline-block', padding: '3px 12px', borderRadius: '999px',
                 background: `${color}20`, color, fontSize: '0.78rem', fontWeight: 700,
@@ -170,7 +171,7 @@ export default function HealthScoreWidget({ setActiveView, lang = 'en' }) {
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '2px' }}>
                     {t('topRisk', lang)}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {topRisk.name}
                   </div>
                   <div style={{
