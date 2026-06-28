@@ -125,7 +125,7 @@ export default function SymptomLog({ backendUrl, geminiKey }) {
       ) : (
         <div className="dashboard-grid">
           {/* Recovery Overview Header */}
-          <div className="card span-12" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--accent)' }}>
+          <div className="card span-12" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--primary)' }}>
             <div>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Procedure Recovering From:</span>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--text-primary)' }}>{recoveryPlan.procedure_name}</h2>
@@ -134,7 +134,7 @@ export default function SymptomLog({ backendUrl, geminiKey }) {
             <div style={{ display: 'flex', gap: '1.5rem' }}>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Follow-up Date:</span>
-                <span style={{ fontWeight: '700', color: 'var(--accent)', fontSize: '1rem' }}>
+                <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '1rem' }}>
                   <Calendar size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                   {recoveryPlan.follow_up_date}
                 </span>
@@ -200,7 +200,6 @@ export default function SymptomLog({ backendUrl, geminiKey }) {
                 return (
                   <div 
                     key={idx} 
-                    className="checkbox-tile" 
                     className={`checkbox-tile ${isCompleted ? 'checked' : ''}`}
                     onClick={() => toggleTask(taskId)}
                     style={{ justifyContent: 'space-between', padding: '1rem' }}
@@ -214,7 +213,7 @@ export default function SymptomLog({ backendUrl, geminiKey }) {
                         </span>
                       </div>
                     </div>
-                    <span style={{ fontSize: '0.8rem', backgroundColor: 'var(--bg-tertiary)', padding: '2px 8px', borderRadius: '4px', color: 'var(--accent)', fontWeight: '600' }}>
+                    <span style={{ fontSize: '0.8rem', backgroundColor: 'var(--bg-tertiary)', padding: '2px 8px', borderRadius: '4px', color: 'var(--primary)', fontWeight: '600' }}>
                       {med.timing}
                     </span>
                   </div>
@@ -224,7 +223,7 @@ export default function SymptomLog({ backendUrl, geminiKey }) {
 
             {/* Restrictions list */}
             <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-              <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>
+              <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--primary)', marginBottom: '0.5rem' }}>
                 Dietary & Activity Rules (Parhez)
               </h4>
               
@@ -271,7 +270,7 @@ export default function SymptomLog({ backendUrl, geminiKey }) {
               <div className="form-group">
                 <label>Body Temperature (Bukhaar): {feverTemp}°C ({((feverTemp * 9/5) + 32).toFixed(1)}°F)</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <Thermometer size={20} color="var(--accent)" />
+                  <Thermometer size={20} color="var(--primary)" />
                   <input 
                     type="number" 
                     step="0.1" 

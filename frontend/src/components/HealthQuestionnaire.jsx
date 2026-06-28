@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, RotateCcw, AlertTriangle, Check, ArrowRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft, RotateCcw, AlertTriangle, Check, ArrowRight, Download } from 'lucide-react';
+import { generateAssessmentPDF } from '../utils/generateReport';
+import { t } from '../i18n';
 
-export default function HealthQuestionnaire({ backendUrl }) {
+export default function HealthQuestionnaire({ backendUrl, geminiKey, lang = 'en' }) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     age: 26,
@@ -106,6 +108,11 @@ export default function HealthQuestionnaire({ backendUrl }) {
       
       const data = await res.json();
       setResults(data);
+      // Persist for Health Score widget
+      localStorage.setItem('last_assessment', JSON.stringify({
+        results: data.results,
+        timestamp: Date.now(),
+      }));
       setStep(3);
     } catch (err) {
       console.error("Error submitting health assessment:", err);
@@ -141,12 +148,12 @@ export default function HealthQuestionnaire({ backendUrl }) {
       {step === 1 && (
         <div className="card">
           <div className="card-title">
-            <span>Step 1: Vital Stats & Habits</span>
+            {t('step1Label', lang)}
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <div className="form-group">
-              <label>Age (Umar)</label>
+              <label>{t('ageLabel', lang)}</label>
               <input 
                 type="number" 
                 name="age" 
@@ -159,7 +166,7 @@ export default function HealthQuestionnaire({ backendUrl }) {
             </div>
             
             <div className="form-group">
-              <label>Weight (Wazan) in kg</label>
+              <label>{t('weightLabel', lang)}</label>
               <input 
                 type="number" 
                 name="weight" 
@@ -172,7 +179,7 @@ export default function HealthQuestionnaire({ backendUrl }) {
             </div>
 
             <div className="form-group">
-              <label>Height (Qad) in cm</label>
+              <label>{t('heightLabel', lang)}</label>
               <input 
                 type="number" 
                 name="height" 
@@ -187,7 +194,7 @@ export default function HealthQuestionnaire({ backendUrl }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <div className="form-group">
-              <label>Cycle Length (Days)</label>
+              <label>{t('cycleLengthLabel', lang)}</label>
               <input 
                 type="number" 
                 name="cycle_length" 
@@ -201,7 +208,7 @@ export default function HealthQuestionnaire({ backendUrl }) {
             </div>
 
             <div className="form-group">
-              <label>Cycle Regularity (Periods ka pattern)</label>
+              <label>{t('cycleRegularityLabel', lang)}</label>
               <select 
                 name="cycle_regularity" 
                 className="form-control"
@@ -224,7 +231,7 @@ export default function HealthQuestionnaire({ backendUrl }) {
                   onChange={handleInputChange} 
                 />
                 <div className="custom-check"></div>
-                <span>I exercise regularly (Gym, walk, yoga)</span>
+                <span>{t('exerciseLabel', lang)}</span>
               </label>
             </div>
 
@@ -237,7 +244,7 @@ export default function HealthQuestionnaire({ backendUrl }) {
                   onChange={handleInputChange} 
                 />
                 <div className="custom-check"></div>
-                <span>I consume fast food frequently (Weekly)</span>
+                <span>{t('fastFoodLabel', lang)}</span>
               </label>
             </div>
           </div>
@@ -254,15 +261,15 @@ export default function HealthQuestionnaire({ backendUrl }) {
       {step === 2 && (
         <div className="card">
           <div className="card-title">
-            <span>Step 2: Symptoms Selection</span>
+            <span>{t('step2Label', lang)}</span>
           </div>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            Apne mehsoos kiye hue symptoms ko select karein (Select all that apply):
+            {t('selectSymptomsHint', lang)}
           </p>
 
           {categories.map(cat => (
             <div key={cat} style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--accent)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
                 {cat}
               </h3>
               <div className="checkbox-grid">
@@ -289,7 +296,8 @@ export default function HealthQuestionnaire({ backendUrl }) {
               <ChevronLeft size={18} /> Back
             </button>
             <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
-              {loading ? "Analyzing..." : "Analyze Health Risks"} <ArrowRight size={18} />
+              {loading ? t('analyzingBtn', lang) : t('analyzeBtn', lang)}
+                <ArrowRight size={18} />
             </button>
           </div>
         </div>
@@ -313,7 +321,7 @@ export default function HealthQuestionnaire({ backendUrl }) {
           </div>
 
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: '1.5rem' }}>
-            AI Assessment Results (Tashkhees Report)
+            {t('resultsTitle', lang)}
           </h2>
 
           <div className="result-card-list">
@@ -372,9 +380,16 @@ export default function HealthQuestionnaire({ backendUrl }) {
             <strong>Disclaimer:</strong> {results.disclaimer}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => generateAssessmentPDF(results, localStorage.getItem('user_name') || 'Patient')}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Download size={16} /> {t('downloadPDF', lang)}
+            </button>
             <button className="btn btn-secondary" onClick={handleReset}>
-              <RotateCcw size={16} /> Start New Assessment
+              <RotateCcw size={16} /> {t('startNewAssessment', lang)}
             </button>
           </div>
         </div>

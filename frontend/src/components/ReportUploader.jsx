@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, MessageSquare, Send, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
+import { t } from '../i18n';
 
-export default function ReportUploader({ backendUrl, geminiKey }) {
+export default function ReportUploader({ backendUrl, geminiKey, lang = 'en' }) {
   const [file, setFile] = useState(null);
   const [langPreference, setLangPreference] = useState('both');
   const [uploading, setUploading] = useState(false);
@@ -141,7 +142,7 @@ export default function ReportUploader({ backendUrl, geminiKey }) {
         <div className="card">
           <div className="card-title">
             <Sparkles />
-            <span>Upload Medical Report / Prescription</span>
+            <span>{t('uploadTitle', lang)}</span>
           </div>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
             Ovarian cyst scans, blood test reports (CBC, Thyroid panel, FSH, LH), or doctor's prescriptions ko upload karein. Hamara AI isko aasan zubaan (Urdu/English) mein explain karega.
@@ -166,7 +167,7 @@ export default function ReportUploader({ backendUrl, geminiKey }) {
             
             {file ? (
               <div>
-                <span style={{ fontWeight: '600', color: 'var(--accent)', display: 'block' }}>
+                <span style={{ fontWeight: '600', color: 'var(--primary)', display: 'block' }}>
                   {file.name}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -176,7 +177,7 @@ export default function ReportUploader({ backendUrl, geminiKey }) {
             ) : (
               <div>
                 <span style={{ fontWeight: '600', display: 'block', fontSize: '1.1rem' }}>
-                  Drag & Drop file here
+                  {t('dragDrop', lang)}
                 </span>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   or click to browse from files (Image or PDF)
@@ -221,7 +222,7 @@ export default function ReportUploader({ backendUrl, geminiKey }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <CheckCircle2 color="var(--success)" size={24} />
                 <div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem' }}>Analysis Complete</h3>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem' }}>{t('analysisComplete', lang)}</h3>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Analyzed via {analysis.provider}</span>
                 </div>
               </div>
@@ -236,7 +237,7 @@ export default function ReportUploader({ backendUrl, geminiKey }) {
               {/* Parse headers/markdown elements simply */}
               {analysis.explanation.split('\n').map((line, idx) => {
                 if (line.startsWith('# ')) {
-                  return <h2 key={idx} style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', margin: '1.5rem 0 0.75rem 0', color: 'var(--accent)' }}>{line.replace('# ', '')}</h2>;
+                  return <h2 key={idx} style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', margin: '1.5rem 0 0.75rem 0', color: 'var(--primary)' }}>{line.replace('# ', '')}</h2>;
                 }
                 if (line.startsWith('## ')) {
                   return <h3 key={idx} style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', margin: '1.25rem 0 0.5rem 0', color: 'var(--text-primary)' }}>{line.replace('## ', '')}</h3>;

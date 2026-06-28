@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Info, AlertCircle, Heart, CheckCircle, ChevronRight } from 'lucide-react';
+import { Search, Info, CheckCircle, ChevronRight } from 'lucide-react';
+import { t } from '../i18n';
 
-export default function SymptomChecker({ backendUrl }) {
+export default function SymptomChecker({ backendUrl, lang = 'en' }) {
   const [conditions, setConditions] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -13,11 +14,10 @@ export default function SymptomChecker({ backendUrl }) {
         const res = await fetch(`${backendUrl}/api/conditions`);
         const data = await res.json();
         setConditions(data);
-        // Default select the first condition
         const firstKey = Object.keys(data)[0];
         if (firstKey) setSelectedCondition(firstKey);
       } catch (err) {
-        console.error("Failed to load conditions:", err);
+        console.error('Failed to load conditions:', err);
       } finally {
         setLoading(false);
       }
@@ -25,79 +25,71 @@ export default function SymptomChecker({ backendUrl }) {
     loadConditions();
   }, [backendUrl]);
 
-  // Filter conditions based on search term
-  const filteredConditionKeys = Object.keys(conditions).filter(key => {
-    const cond = conditions[key];
-    const matchesName = cond.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSymptom = cond.symptoms.some(sym => sym.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesExplanation = cond.explanation.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesName || matchesSymptom || matchesExplanation;
+  const filteredKeys = Object.keys(conditions).filter(key => {
+    const c = conditions[key];
+    const q = searchTerm.toLowerCase();
+    return c.name.toLowerCase().includes(q) ||
+      c.symptoms.some(s => s.toLowerCase().includes(q)) ||
+      c.explanation.toLowerCase().includes(q);
   });
 
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: '3rem' }}>Loading health awareness guide...</div>;
-  }
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+      {t('loadingConditions', lang)}
+    </div>
+  );
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
-      {/* Search Input Bar */}
       <div className="search-container">
         <Search className="search-icon" size={20} />
-        <input 
-          type="text" 
-          className="search-input" 
-          placeholder="Search symptoms (e.g. fatigue, irregular periods, hair loss, pelvic pain...)"
+        <input
+          type="text"
+          className="search-input"
+          placeholder={t('searchPlaceholder', lang)}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
         />
       </div>
 
       <div className="dashboard-grid">
-        {/* Left Column: Conditions List */}
+        {/* Left: conditions list */}
         <div className="card span-4" style={{ height: 'fit-content', maxHeight: '550px', overflowY: 'auto', padding: '1rem' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', padding: '0 0.5rem 0.5rem 0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.75rem', color: 'var(--accent)' }}>
-            Conditions ({filteredConditionKeys.length})
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', padding: '0 0.5rem 0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.75rem', color: 'var(--primary)' }}>
+            {t('conditionsLabel', lang)} ({filteredKeys.length})
           </h3>
-          
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            {filteredConditionKeys.length === 0 ? (
+            {filteredKeys.length === 0 ? (
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '1rem', textAlign: 'center' }}>
-                No conditions match your search.
+                {t('noConditionsMatch', lang)}
               </span>
-            ) : (
-              filteredConditionKeys.map(key => {
-                const cond = conditions[key];
-                const isActive = selectedCondition === key;
-                return (
-                  <button 
-                    key={key} 
-                    className={`menu-item ${isActive ? 'active' : ''}`}
-                    onClick={() => setSelectedCondition(key)}
-                    style={{ 
-                      width: '100%', 
-                      border: 'none', 
-                      textAlign: 'left',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '8px',
-                      background: isActive ? 'linear-gradient(90deg, var(--bg-tertiary) 0%, rgba(76, 29, 149, 0.1) 100%)' : 'transparent',
-                      borderLeft: isActive ? '4px solid var(--accent)' : '4px solid transparent',
-                      paddingLeft: isActive ? 'calc(1rem - 4px)' : '1rem'
-                    }}
-                  >
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)', display: 'block' }}>{cond.name}</strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {cond.symptoms.slice(0, 3).join(', ')}...
-                      </span>
-                    </div>
-                  </button>
-                );
-              })
-            )}
+            ) : filteredKeys.map(key => {
+              const cond = conditions[key];
+              const isActive = selectedCondition === key;
+              return (
+                <button
+                  key={key}
+                  className={`menu-item ${isActive ? 'active' : ''}`}
+                  onClick={() => setSelectedCondition(key)}
+                  style={{
+                    width: '100%', border: 'none', textAlign: 'left',
+                    padding: '0.75rem 1rem', borderRadius: '8px',
+                    background: isActive ? 'linear-gradient(90deg, var(--bg-tertiary) 0%, rgba(76,29,149,0.1) 100%)' : 'transparent',
+                    borderLeft: isActive ? '4px solid var(--accent)' : '4px solid transparent',
+                    paddingLeft: isActive ? 'calc(1rem - 4px)' : '1rem',
+                  }}
+                >
+                  <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)', display: 'block' }}>{cond.name}</strong>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {cond.symptoms.slice(0, 3).join(', ')}...
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right Column: Detailed awareness card */}
+        {/* Right: detail */}
         <div className="span-8">
           {selectedCondition && conditions[selectedCondition] ? (
             <div className="card" style={{ borderLeft: '4px solid var(--primary)', minHeight: '400px' }}>
@@ -106,29 +98,25 @@ export default function SymptomChecker({ backendUrl }) {
                   <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: '800' }}>
                     {conditions[selectedCondition].name}
                   </h2>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Clinical Information & Awareness</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('clinicalInfo', lang)}</span>
                 </div>
-                
-                <span className={`badge ${conditions[selectedCondition].urgency.toLowerCase().includes('urgent') ? 'high' : (conditions[selectedCondition].urgency.toLowerCase().includes('soon') ? 'medium' : 'low')}`}>
+                <span className={`badge ${conditions[selectedCondition].urgency.toLowerCase().includes('urgent') ? 'high' : conditions[selectedCondition].urgency.toLowerCase().includes('soon') ? 'medium' : 'low'}`}>
                   {conditions[selectedCondition].urgency}
                 </span>
               </div>
 
-              {/* Roman Urdu Explanation */}
               <div style={{ marginBottom: '2rem' }}>
-                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--accent)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Info size={16} />
-                  Roman Urdu Explanation (Khulasa)
+                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Info size={16} /> {t('urduExplanation', lang)}
                 </h4>
                 <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: '1.7', borderLeft: '3px solid var(--accent)', paddingLeft: '0.75rem', fontStyle: 'italic' }}>
                   {conditions[selectedCondition].explanation}
                 </p>
               </div>
 
-              {/* Symptoms Checklist */}
               <div style={{ marginBottom: '2rem' }}>
-                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--accent)', marginBottom: '0.75rem' }}>
-                  Associated Symptoms (Alamaat)
+                <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--primary)', marginBottom: '0.75rem' }}>
+                  {t('associatedSymptoms', lang)}
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem' }}>
                   {conditions[selectedCondition].symptoms.map(sym => (
@@ -140,32 +128,28 @@ export default function SymptomChecker({ backendUrl }) {
                 </div>
               </div>
 
-              {/* Lifestyle modifications */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>Urgency Details:</span>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    {conditions[selectedCondition].urgency_desc}
-                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>{t('urgencyDetails', lang)}</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{conditions[selectedCondition].urgency_desc}</span>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>Lifestyle Tips (Parhez & Mashwara):</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>{t('lifestyleTips', lang)}</span>
                   <ul style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', paddingLeft: '1.2rem' }}>
-                    {conditions[selectedCondition].lifestyle_tips.map((tip, idx) => (
-                      <li key={idx} style={{ marginBottom: '0.25rem' }}>{tip}</li>
+                    {conditions[selectedCondition].lifestyle_tips.map((tip, i) => (
+                      <li key={i} style={{ marginBottom: '0.25rem' }}>{tip}</li>
                     ))}
                   </ul>
                 </div>
               </div>
 
-              {/* Disclaimer */}
               <div className="disclaimer-box" style={{ marginTop: '2rem' }}>
-                <strong>Disclaimer:</strong> Yeh information sirf awareness ke liye hai aur diagnosis nahi hai. Sahi tashkhees ke liye apne doctor se mashwara karein.
+                {t('symptomDisclaimer', lang)}
               </div>
             </div>
           ) : (
             <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: 'var(--text-muted)' }}>
-              Select a condition to view details
+              {t('selectCondition', lang)}
             </div>
           )}
         </div>

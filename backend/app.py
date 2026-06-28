@@ -572,6 +572,91 @@ def check_in():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    """AI health chatbot endpoint using Gemini API."""
+    try:
+        data = request.get_json()
+        messages = data.get('messages', [])
+
+        # Get API key from header or environment
+        auth_header = request.headers.get('Authorization', '')
+        api_key = ''
+        if auth_header.startswith('Bearer '):
+            api_key = auth_header[7:].strip()
+        if not api_key:
+            api_key = os.getenv('GEMINI_API_KEY', '')
+
+        if not messages:
+            return jsonify({'error': 'No messages provided'}), 400
+
+        user_text = messages[-1].get('content', '') if messages else ''
+
+        if api_key:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+
+                system_prompt = (
+                    "You are HerCare AI — a compassionate women's health companion for Pakistani women. "
+                    "You provide awareness and education about women's health conditions like PCOS, Thyroid disorders, "
+                    "Anemia, Endometriosis, menstrual irregularities, menopause, and general reproductive health. "
+                    "You respond in the same language the user writes in (English, Urdu, or Roman Urdu). "
+                    "Always remind users that you provide awareness only — not medical diagnosis or treatment. "
+                    "Encourage consulting a qualified doctor for medical advice. "
+                    "Be warm, supportive, and culturally sensitive."
+                )
+
+                # Build history for Gemini
+                history = []
+                for msg in messages[:-1]:
+                    role = 'user' if msg.get('role') == 'user' else 'model'
+                    history.append({'role': role, 'parts': [msg.get('content', '')]})
+
+                model = genai.GenerativeModel(
+                    'gemini-1.5-flash',
+                    system_instruction=system_prompt
+                )
+                chat_session = model.start_chat(history=history)
+                response = chat_session.send_message(user_text)
+                reply = response.text
+
+                return jsonify({'reply': reply})
+
+            except Exception as e:
+                print(f"Gemini chat error: {e}")
+                # Fall through to mock response
+
+        # Fallback mock responses when no API key
+        mock_responses = {
+            'pcos': "PCOS (Polycystic Ovary Syndrome) ek common hormonal disorder hai. Symptoms mein irregular periods, weight gain, acne, aur baal girna shamil hain. Diagnosis ke liye doctor se ultrasound aur blood tests karwayein. Lifestyle changes jaise exercise aur balanced diet bahut helpful hoti hain. ⚠️ Yeh awareness hai — diagnosis ke liye doctor se zaroor milein.",
+            'thyroid': "Thyroid disorders mein Hypothyroidism (underactive) aur Hyperthyroidism (overactive) shamil hain. Common symptoms: thakawat, weight changes, dry skin, hair loss. TSH blood test se diagnosis hoti hai. Treatment mein medication aur regular monitoring shamil hai. ⚠️ Doctor se milna zaroor hai.",
+            'period': "Irregular periods kai wajuhat se ho sakte hain: stress, PCOS, thyroid issues, weight changes, ya hormonal imbalance. Agar 3+ months se irregular hain to doctor se milein. Period tracker app use karein aur apni diet aur neend ka khayal rakhein. ⚠️ Medical diagnosis ke liye gynecologist se milein.",
+            'anemia': "Anemia mein khoon mein hemoglobin kam ho jata hai. Symptoms: thakawat, chakkar, pale skin, saans lene mein takleef. Iron-rich foods khayein: palak, gosht, daalein, fortified cereals. CBC blood test se confirm karein. ⚠️ Doctor se treatment plan lein.",
+            'menopause': "Menopause generally 45-55 saal ki umra mein hota hai. Common symptoms: hot flashes, mood swings, neend ki takleef, vaginal dryness. Yeh ek natural process hai. Calcium aur Vitamin D supplements helpful ho sakte hain. HRT (Hormone Replacement Therapy) ke baare mein doctor se poochhein. ⚠️ Apni healthcare provider se guidance lein.",
+        }
+
+        user_lower = user_text.lower()
+        reply = None
+        for keyword, response in mock_responses.items():
+            if keyword in user_lower:
+                reply = response
+                break
+
+        if not reply:
+            reply = (
+                "Shukriya aapke sawaal ke liye! Main HerCare AI hoon — women's health awareness ke liye yahaan hoon. "
+                "PCOS, thyroid, periods, anemia, menopause ya koi bhi women's health topic ke baare mein poochhein. "
+                "\n\n⚠️ Note: Yeh sirf awareness hai. Diagnosis ya treatment ke liye please ek qualified doctor se milein. "
+                "\n\nKya aap apna sawaal thoda aur detail mein bata sakti hain?"
+            )
+
+        return jsonify({'reply': reply})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Bind to all interfaces (0.0.0.0) so it's accessible from the frontend
     port = int(os.environ.get('PORT', 5000))
